@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -48,7 +47,7 @@
       padding: 20px;
     }
     .video-cover-wrapper {
-      aspect-ratio: 1 / 1;
+      aspect-ratio: 16 / 9;
       display: flex;
       align-items: center;
       justify-content: center;
@@ -58,12 +57,11 @@
       overflow: hidden;
     }
     .video-cover {
-      width: 92%;
+      width: 100%;
       height: auto;
-      object-fit: contain;
+      object-fit: cover;
       margin: 0 auto;
-      max-height: 280px;
-      object-fit: contain;
+      max-height: 360px;
       display: block;
       max-width: 100%;
       border-radius: 8px;
@@ -118,6 +116,16 @@
   <script>
     const FLASK_API = "https://edu-t9t0.onrender.com/search_and_summarize";
 
+    // 預熱後端
+    window.onload = async () => {
+      try {
+        await fetch("https://edu-t9t0.onrender.com/health", { method: "GET" });
+        console.log("Backend pre-warmed");
+      } catch (err) {
+        console.log("Pre-warm failed:", err);
+      }
+    };
+
     function renderBulletPoints(summaryText) {
       const lines = summaryText.split("\n")
         .filter(line => line.trim().startsWith("-"))
@@ -134,9 +142,16 @@
         return;
       }
 
-      resultsDiv.innerHTML = "<div class='loader'>⏳ AI is generating one video, image and summary...</div>";
+      resultsDiv.innerHTML = "<div class='loader'>⏳ Searching for video...</div>";
 
       try {
+        // 更新載入訊息
+        setTimeout(() => {
+          if (resultsDiv.innerHTML.includes("Searching for video")) {
+            resultsDiv.innerHTML = "<div class='loader'>⏳ Generating AI summary...</div>";
+          }
+        }, 3000);
+
         const res = await fetch(FLASK_API, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -153,7 +168,7 @@
         resultsDiv.innerHTML = `
           <div class="video-box">
             <div class="video-cover-wrapper">
-              <img class="video-cover" src="${data.coverImage}" alt="AI cover" onclick="window.open('https://www.youtube.com/watch?v=${data.video_id}', '_blank')" />
+              <img class="video-cover" src="${data.thumbnail}" alt="YouTube thumbnail" onclick="window.open('https://www.youtube.com/watch?v=${data.video_id}', '_blank')" />
             </div>
             <div class="video-details">
               <div class="video-title">${data.title}</div>
