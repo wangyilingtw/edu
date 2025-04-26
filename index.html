@@ -1,0 +1,172 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Future Education</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background-color: #0f1115;
+      color: #e0e0e0;
+      margin: 0;
+      padding: 40px 20px;
+    }
+    h1 {
+      text-align: center;
+      font-size: 36px;
+      color: #00c37a;
+    }
+    .search-bar {
+      display: flex;
+      justify-content: center;
+      gap: 12px;
+      margin: 24px auto;
+    }
+    input, button {
+      padding: 10px 14px;
+      border-radius: 10px;
+      border: none;
+      font-size: 16px;
+    }
+    input {
+      width: 300px;
+    }
+    button {
+      background-color: #00c37a;
+      color: white;
+      font-weight: bold;
+      cursor: pointer;
+    }
+    .video-box {
+      max-width: 800px;
+      margin: 30px auto;
+      background-color: #1a1c23;
+      border-radius: 14px;
+      box-shadow: 0 0 12px rgba(0,0,0,0.4);
+      overflow: hidden;
+      padding: 20px;
+    }
+    .video-cover-wrapper {
+      aspect-ratio: 1 / 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      background-color: #0f1115;
+      border-radius: 12px;
+      overflow: hidden;
+    }
+    .video-cover {
+      width: 92%;
+      height: auto;
+      object-fit: contain;
+      margin: 0 auto;
+      max-height: 280px;
+      object-fit: contain;
+      display: block;
+      max-width: 100%;
+      border-radius: 8px;
+      cursor: pointer;
+      box-shadow: 0 0 10px rgba(0,0,0,0.6);
+    }
+    .video-details {
+      padding: 20px;
+    }
+    .video-title {
+      font-size: 20px;
+      font-weight: bold;
+      color: #ffffff;
+      text-align: center;
+      margin-bottom: 10px;
+    }
+    .view-count {
+      font-size: 14px;
+      color: #bbb;
+      text-align: center;
+      margin-bottom: 10px;
+    }
+    .summary {
+      background-color: #20232a;
+      padding: 16px;
+      border-radius: 10px;
+      text-align: left;
+    }
+    .summary ul {
+      padding-left: 20px;
+    }
+    .summary li {
+      margin-bottom: 8px;
+    }
+    .loader {
+      text-align: center;
+      font-size: 18px;
+      color: #00c37a;
+      margin-top: 30px;
+    }
+  </style>
+</head>
+<body>
+  <h1>Future Education</h1>
+  <div class="search-bar">
+    <input id="topicInput" type="text" placeholder="Enter a topic, e.g., Python" />
+    <button onclick="search()">Search</button>
+  </div>
+
+  <div id="results"></div>
+
+  <script>
+    const FLASK_API = "https://edu-t9t0.onrender.com/search_and_summarize";
+
+    function renderBulletPoints(summaryText) {
+      const lines = summaryText.split("\n")
+        .filter(line => line.trim().startsWith("-"))
+        .map(line => line.slice(1).trim().split(" ").slice(0, 15).join(" "));
+      const limited = lines.slice(0, 5);
+      return "<ul>" + limited.map(line => `<li>${line}</li>`).join("") + "</ul>";
+    }
+
+    async function search() {
+      const topic = document.getElementById("topicInput").value.trim();
+      const resultsDiv = document.getElementById("results");
+      if (!topic) {
+        resultsDiv.innerHTML = "<p style='text-align:center'>❗ Please enter a topic.</p>";
+        return;
+      }
+
+      resultsDiv.innerHTML = "<div class='loader'>⏳ AI is generating one video, image and summary...</div>";
+
+      try {
+        const res = await fetch(FLASK_API, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ topic })
+        });
+        const data = await res.json();
+        if (data.error) {
+          resultsDiv.innerHTML = "<p style='text-align:center'>❌ " + data.error + "</p>";
+          return;
+        }
+
+        const views = data.viewCount ? parseInt(data.viewCount).toLocaleString() : "N/A";
+
+        resultsDiv.innerHTML = `
+          <div class="video-box">
+            <div class="video-cover-wrapper">
+              <img class="video-cover" src="${data.coverImage}" alt="AI cover" onclick="window.open('https://www.youtube.com/watch?v=${data.video_id}', '_blank')" />
+            </div>
+            <div class="video-details">
+              <div class="video-title">${data.title}</div>
+              <div class="view-count">👁️ ${views} views</div>
+              <div class="summary"><strong>🧠 AI Summary:</strong>${renderBulletPoints(data.summary)}</div>
+            </div>
+          </div>
+        `;
+      } catch (err) {
+        resultsDiv.innerHTML = "<p style='text-align:center'>❌ Error loading result.</p>";
+        console.error(err);
+      }
+    }
+  </script>
+</body>
+</html>
